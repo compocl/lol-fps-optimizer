@@ -92,28 +92,36 @@ $btnRestore.Location = New-Object System.Drawing.Point(150, 160)
 $btnRestore.Size = New-Object System.Drawing.Size(120, 35)
 $form.Controls.Add($btnRestore)
 
+$lblBenchmarkHelp = New-Object System.Windows.Forms.Label
+$lblBenchmarkHelp.Text = "Medir la mejora real (opcional): PresentMon es una herramienta oficial (de Intel) que registra el FPS real de tu partida. Orden sugerido: (1) Descargar PresentMon  ->  (2) Medir 'Antes' jugando SIN optimizar todavia  ->  (3) click en Optimizar (arriba)  ->  (4) Medir 'Despues' ya optimizado  ->  (5) Comparar resultados."
+$lblBenchmarkHelp.Location = New-Object System.Drawing.Point(20, 200)
+$lblBenchmarkHelp.Size = New-Object System.Drawing.Size(600, 45)
+$lblBenchmarkHelp.Font = New-Object System.Drawing.Font("Segoe UI", 8, [System.Drawing.FontStyle]::Italic)
+$lblBenchmarkHelp.ForeColor = [System.Drawing.Color]::DimGray
+$form.Controls.Add($lblBenchmarkHelp)
+
 $btnPresentMon = New-Object System.Windows.Forms.Button
-$btnPresentMon.Text = "Descargar PresentMon"
-$btnPresentMon.Location = New-Object System.Drawing.Point(280, 160)
-$btnPresentMon.Size = New-Object System.Drawing.Size(160, 35)
+$btnPresentMon.Text = "1. Descargar PresentMon"
+$btnPresentMon.Location = New-Object System.Drawing.Point(20, 250)
+$btnPresentMon.Size = New-Object System.Drawing.Size(140, 35)
 $form.Controls.Add($btnPresentMon)
 
 $btnMeasureBefore = New-Object System.Windows.Forms.Button
-$btnMeasureBefore.Text = "Medir 'Antes'"
-$btnMeasureBefore.Location = New-Object System.Drawing.Point(20, 205)
-$btnMeasureBefore.Size = New-Object System.Drawing.Size(120, 35)
+$btnMeasureBefore.Text = "2. Medir 'Antes'"
+$btnMeasureBefore.Location = New-Object System.Drawing.Point(170, 250)
+$btnMeasureBefore.Size = New-Object System.Drawing.Size(140, 35)
 $form.Controls.Add($btnMeasureBefore)
 
 $btnMeasureAfter = New-Object System.Windows.Forms.Button
-$btnMeasureAfter.Text = "Medir 'Despues'"
-$btnMeasureAfter.Location = New-Object System.Drawing.Point(150, 205)
-$btnMeasureAfter.Size = New-Object System.Drawing.Size(120, 35)
+$btnMeasureAfter.Text = "4. Medir 'Despues'"
+$btnMeasureAfter.Location = New-Object System.Drawing.Point(320, 250)
+$btnMeasureAfter.Size = New-Object System.Drawing.Size(140, 35)
 $form.Controls.Add($btnMeasureAfter)
 
 $btnCompare = New-Object System.Windows.Forms.Button
-$btnCompare.Text = "Comparar resultados"
-$btnCompare.Location = New-Object System.Drawing.Point(280, 205)
-$btnCompare.Size = New-Object System.Drawing.Size(160, 35)
+$btnCompare.Text = "5. Comparar"
+$btnCompare.Location = New-Object System.Drawing.Point(470, 250)
+$btnCompare.Size = New-Object System.Drawing.Size(140, 35)
 $form.Controls.Add($btnCompare)
 
 $txtLog = New-Object System.Windows.Forms.TextBox
@@ -123,18 +131,19 @@ $txtLog.ReadOnly = $true
 $txtLog.BackColor = [System.Drawing.Color]::Black
 $txtLog.ForeColor = [System.Drawing.Color]::LightGray
 $txtLog.Font = New-Object System.Drawing.Font("Consolas", 9)
-$txtLog.Location = New-Object System.Drawing.Point(20, 250)
-$txtLog.Size = New-Object System.Drawing.Size(595, 260)
+$txtLog.Location = New-Object System.Drawing.Point(20, 295)
+$txtLog.Size = New-Object System.Drawing.Size(595, 215)
 $form.Controls.Add($txtLog)
 
 $allButtons = @($btnOptimize, $btnRestore, $btnPresentMon, $btnMeasureBefore, $btnMeasureAfter, $btnCompare)
 
 $script:currentJob = $null
+$script:currentTaskName = $null
 $script:logLength = 0
 $logPath = Join-Path $root "state\optimizer.log"
 
 function Start-Task {
-    param([scriptblock]$ScriptBlock, [object[]]$ArgumentList)
+    param([scriptblock]$ScriptBlock, [object[]]$ArgumentList, [string]$TaskName = '')
 
     if ($script:currentJob) {
         [System.Windows.Forms.MessageBox]::Show("Ya hay una tarea en ejecucion. Espera a que termine.", "Optimizador") | Out-Null
@@ -143,6 +152,7 @@ function Start-Task {
 
     foreach ($b in $allButtons) { $b.Enabled = $false }
     $script:logLength = if (Test-Path $logPath) { (Get-Content $logPath -Raw -ErrorAction SilentlyContinue).Length } else { 0 }
+    $script:currentTaskName = $TaskName
     $script:currentJob = Start-Job -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
 }
 
@@ -158,12 +168,32 @@ $timer.Add_Tick({
         }
 
         if ($script:currentJob -and $script:currentJob.State -ne 'Running') {
+            $jobState = $script:currentJob.State
             $out = Receive-Job -Job $script:currentJob -ErrorAction SilentlyContinue
             if ($out) { $txtLog.AppendText(($out | Out-String)) }
             Remove-Job -Job $script:currentJob -ErrorAction SilentlyContinue
+            $finishedTask = $script:currentTaskName
             $script:currentJob = $null
+            $script:currentTaskName = $null
             foreach ($b in $allButtons) { $b.Enabled = $true }
             Update-StatusLabel
+
+            if ($finishedTask -eq 'PresentMon') {
+                if ($jobState -eq 'Completed') {
+                    [System.Windows.Forms.MessageBox]::Show(
+                        "Que es PresentMon: una herramienta oficial (de Intel, open-source) que mide el FPS real de tu partida, para poder comparar objetivamente el antes/despues de optimizar." + [Environment]::NewLine + [Environment]::NewLine +
+                        "Ya se descargo. Proximo paso:" + [Environment]::NewLine +
+                        "1) Click en '2. Medir Antes' y juega una partida SIN optimizar todavia (asi capturas la linea base)." + [Environment]::NewLine +
+                        "2) Click en 'Optimizar' (arriba)." + [Environment]::NewLine +
+                        "3) Juega otra partida con '4. Medir Despues'." + [Environment]::NewLine +
+                        "4) Click en '5. Comparar' para ver si realmente mejoro (FPS, 1% low, jitter).",
+                        "PresentMon listo"
+                    ) | Out-Null
+                }
+                else {
+                    [System.Windows.Forms.MessageBox]::Show("La descarga de PresentMon no se completo correctamente. Revisa el log de abajo para el detalle del error (por ejemplo, sin conexion a internet).", "PresentMon") | Out-Null
+                }
+            }
         }
     })
 $timer.Start()
@@ -174,7 +204,7 @@ $btnOptimize.Add_Click({
             Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
             & $scriptPath -SkipServices:$skipServices -SkipNetwork:$skipNetwork -Aggressive:$aggressive -SkipProcessWait:(-not $waitProcess)
         }
-        Start-Task -ScriptBlock $sb -ArgumentList @(
+        Start-Task -TaskName 'Optimize' -ScriptBlock $sb -ArgumentList @(
             (Join-Path $root "Optimize-LoL.ps1"),
             (-not $chkServices.Checked),
             (-not $chkNetwork.Checked),
@@ -189,7 +219,7 @@ $btnRestore.Add_Click({
             Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
             & $scriptPath
         }
-        Start-Task -ScriptBlock $sb -ArgumentList @((Join-Path $root "Restore-LoL.ps1"))
+        Start-Task -TaskName 'Restore' -ScriptBlock $sb -ArgumentList @((Join-Path $root "Restore-LoL.ps1"))
     })
 
 $btnPresentMon.Add_Click({
@@ -198,16 +228,23 @@ $btnPresentMon.Add_Click({
             Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
             & $scriptPath
         }
-        Start-Task -ScriptBlock $sb -ArgumentList @((Join-Path $root "benchmark\Get-PresentMon.ps1"))
+        Start-Task -TaskName 'PresentMon' -ScriptBlock $sb -ArgumentList @((Join-Path $root "benchmark\Get-PresentMon.ps1"))
     })
 
 $btnMeasureBefore.Add_Click({
-        [System.Windows.Forms.MessageBox]::Show("Se abrira una ventana de consola. Juega tu partida con normalidad; la captura se detiene sola al cerrar el juego.", "Medir 'Antes'") | Out-Null
+        if (-not (Get-ChildItem -Path (Join-Path $root "tools\PresentMon") -Recurse -Filter 'PresentMon*.exe' -ErrorAction SilentlyContinue)) {
+            [System.Windows.Forms.MessageBox]::Show("Primero necesitas descargar PresentMon: click en '1. Descargar PresentMon'.", "Falta PresentMon") | Out-Null
+            return
+        }
+        [System.Windows.Forms.MessageBox]::Show("Se abrira una ventana de consola aparte que va a esperar a que abras League of Legends y luego grabar tu FPS real durante la partida (no interfiere con el juego)." + [Environment]::NewLine + [Environment]::NewLine + "Juega una partida CON NORMALIDAD, SIN optimizar todavia -- esta es tu linea base. La captura se detiene sola cuando cierres el juego.", "Medir 'Antes' (linea base)") | Out-Null
         Start-Process -FilePath "powershell.exe" -ArgumentList "-NoExit -ExecutionPolicy Bypass -File `"$(Join-Path $root 'benchmark\Measure-Session.ps1')`" -Label antes"
     })
 
 $btnMeasureAfter.Add_Click({
-        [System.Windows.Forms.MessageBox]::Show("Se abrira una ventana de consola. Juega tu partida con normalidad; la captura se detiene sola al cerrar el juego.", "Medir 'Despues'") | Out-Null
+        if (-not (Test-Path (Get-BackupFilePath))) {
+            [System.Windows.Forms.MessageBox]::Show("Todavia no aplicaste la optimizacion. Click en 'Optimizar' (arriba) antes de medir 'Despues', si no vas a comparar dos partidas sin optimizar.", "Sin optimizar") | Out-Null
+        }
+        [System.Windows.Forms.MessageBox]::Show("Se abrira una ventana de consola aparte que va a esperar a que abras League of Legends y luego grabar tu FPS real durante la partida." + [Environment]::NewLine + [Environment]::NewLine + "Juega otra partida, ya con la optimizacion aplicada. La captura se detiene sola cuando cierres el juego.", "Medir 'Despues'") | Out-Null
         Start-Process -FilePath "powershell.exe" -ArgumentList "-NoExit -ExecutionPolicy Bypass -File `"$(Join-Path $root 'benchmark\Measure-Session.ps1')`" -Label despues"
     })
 

@@ -22,12 +22,20 @@ $headers = @{ 'User-Agent' = 'LoL-FPS-Optimizer' }
 Write-Host "Consultando la ultima version de PresentMon en GitHub..."
 $release = Invoke-RestMethod -Uri $apiUrl -Headers $headers
 
-$asset = $release.assets | Where-Object { $_.name -match '\.zip$' } | Select-Object -First 1
+# El release incluye variantes que NO son el binario que necesitamos:
+# "ReleaseSymbols.zip" (solo simbolos de depuracion, .pdb) y un .msi (instalador
+# con GUI completa, mucho mas pesado). Lo que queremos es el .exe standalone
+# de consola ("PresentMon-<version>-x64.exe"), asi que se prioriza por nombre
+# y se excluye explicitamente cualquier asset que contenga "Symbols".
+$asset = $release.assets | Where-Object { $_.name -match '^PresentMon.*x64\.exe$' } | Select-Object -First 1
 if (-not $asset) {
-    $asset = $release.assets | Where-Object { $_.name -match '\.exe$' } | Select-Object -First 1
+    $asset = $release.assets | Where-Object { $_.name -match '\.exe$' -and $_.name -notmatch 'Symbols' } | Select-Object -First 1
 }
 if (-not $asset) {
-    throw "No se encontro ningun asset descargable en el release $($release.tag_name)."
+    $asset = $release.assets | Where-Object { $_.name -match '\.zip$' -and $_.name -notmatch 'Symbols' } | Select-Object -First 1
+}
+if (-not $asset) {
+    throw "No se encontro un asset de PresentMon (.exe standalone) descargable en el release $($release.tag_name). Assets disponibles: $($release.assets.name -join ', ')"
 }
 
 if (-not (Test-Path $DestinationDir)) { New-Item -ItemType Directory -Path $DestinationDir -Force | Out-Null }
