@@ -1,0 +1,7 @@
+# Estado en tiempo de ejecucion: respaldo de settings, logs y capturas
+state/*
+!state/.gitkeep
+logs/*
+!logs/.gitkeep
+tools/*
+!tools/.gitkeep
