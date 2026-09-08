@@ -80,6 +80,8 @@ try {
     Write-Log "Deshabilitando Game DVR / grabacion en segundo plano y activando Modo Juego..."
     Disable-GameDvrAndFullscreenOptimizations -BackupState $backup
 
+    Show-GpuVendorRecommendations
+
     if (-not $SkipServices) {
         Write-Log "Pausando servicios en segundo plano no esenciales..."
         Set-BackgroundServicesForGaming -BackupState $backup
