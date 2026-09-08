@@ -45,8 +45,31 @@ irm https://raw.githubusercontent.com/compocl/lol-fps-optimizer/main/install.ps1
 
 Esto descarga el proyecto a `%LOCALAPPDATA%\lol-fps-optimizer` y abre la
 interfaz grafica (`Gui.ps1`), que pedira permisos de Administrador via UAC.
-Puedes volver a abrir la GUI en cualquier momento sin reinstalar corriendo
-`%LOCALAPPDATA%\lol-fps-optimizer\Gui.ps1`.
+Puedes volver a abrir la GUI en cualquier momento sin reinstalar haciendo
+doble clic en `%LOCALAPPDATA%\lol-fps-optimizer\Iniciar-Optimizador.cmd`.
+
+### Sobre la politica de ejecucion de PowerShell
+
+Por defecto, Windows bloquea correr archivos `.ps1` sueltos ("running
+scripts is disabled on this system"). **No hace falta que cambies nada**:
+tanto `install.ps1` como `Gui.ps1` como `Iniciar-Optimizador.cmd` siempre se
+lanzan con `-ExecutionPolicy Bypass` en su propio proceso, asi que funcionan
+en cualquier equipo sin tocar tu configuracion global.
+
+Ese `Bypass` es **por proceso**: no persiste, no requiere admin, y no afecta
+a ningun otro programa. Solo si quieres correr los `.ps1` tu mismo de forma
+directa (por ejemplo `.\Optimize-LoL.ps1` en una consola normal, sin pasar
+por la GUI ni por `install.ps1`) necesitas una de estas dos opciones:
+
+```powershell
+# Opcion A: bypass puntual, solo para esa consola (no persiste)
+powershell -ExecutionPolicy Bypass -File .\Optimize-LoL.ps1
+
+# Opcion B: habilitarlo una vez para tu usuario (persiste; es el default
+# recomendado por Microsoft para desarrollo: exige firma solo en scripts
+# descargados de internet, no en los locales)
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
 
 ### Interfaz grafica
 
@@ -126,6 +149,7 @@ capturas.
 ```
 install.ps1              Bootstrap para 'irm | iex': descarga el repo y abre Gui.ps1
 Gui.ps1                   Interfaz grafica (WinForms), se autoeleva a Administrador
+Iniciar-Optimizador.cmd  Lanzador de doble clic para Gui.ps1 (sin lios de politica de ejecucion)
 Optimize-LoL.ps1        Aplica todos los ajustes (requiere Administrador)
 Restore-LoL.ps1          Revierte todo usando state\backup.json
 modules/

@@ -171,6 +171,7 @@ $timer.Start()
 $btnOptimize.Add_Click({
         $sb = {
             param($scriptPath, $skipServices, $skipNetwork, $aggressive, $waitProcess)
+            Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
             & $scriptPath -SkipServices:$skipServices -SkipNetwork:$skipNetwork -Aggressive:$aggressive -SkipProcessWait:(-not $waitProcess)
         }
         Start-Task -ScriptBlock $sb -ArgumentList @(
@@ -183,12 +184,20 @@ $btnOptimize.Add_Click({
     })
 
 $btnRestore.Add_Click({
-        $sb = { param($scriptPath) & $scriptPath }
+        $sb = {
+            param($scriptPath)
+            Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+            & $scriptPath
+        }
         Start-Task -ScriptBlock $sb -ArgumentList @((Join-Path $root "Restore-LoL.ps1"))
     })
 
 $btnPresentMon.Add_Click({
-        $sb = { param($scriptPath) & $scriptPath }
+        $sb = {
+            param($scriptPath)
+            Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+            & $scriptPath
+        }
         Start-Task -ScriptBlock $sb -ArgumentList @((Join-Path $root "benchmark\Get-PresentMon.ps1"))
     })
 

@@ -41,4 +41,8 @@ Remove-Item $extractTemp -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host "Instalado en: $installDir" -ForegroundColor Green
 Write-Host "Iniciando interfaz grafica (te pedira permisos de Administrador)..." -ForegroundColor Cyan
 
-& (Join-Path $installDir "Gui.ps1")
+# Se lanza en un proceso nuevo con -ExecutionPolicy Bypass explicito para no
+# depender de la politica de ejecucion configurada en el equipo del usuario
+# (por defecto en Windows suele ser "Restricted", que bloquea cargar .ps1).
+$guiPath = Join-Path $installDir "Gui.ps1"
+Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$guiPath`""
