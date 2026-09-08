@@ -64,7 +64,7 @@ function Show-GpuVendorRecommendations {
         Write-Log "Recomendado manual (NVIDIA Control Panel): Administrar configuracion 3D > pestana Programa > League of Legends.exe > Modo de administracion de energia = 'Preferir maximo rendimiento'." -Level INFO
     }
     if ($vendors.Amd) {
-        Write-Log "Recomendado manual (AMD Software / Radeon Settings): Graficos > League of Legends > Perfil grafico = 'Rendimiento estandar' o 'Rendimiento' (evitar 'Ahorro de energia'), y Radeon Chill desactivado para este juego." -Level INFO
+        Write-Log "Recomendado manual (AMD Software: Adrenalin Edition): pestana Gaming > selecciona League of Legends > activa 'Radeon Anti-Lag' (baja el input lag) y desactiva 'Radeon Chill' y 'Radeon Boost' (ambos agregan latencia o bajan nitidez, mala idea en un juego competitivo)." -Level INFO
     }
     if ($vendors.Intel) {
         Write-Log "Recomendado manual (Intel Graphics Command Center, o el panel clasico 'Intel Graphics Control Panel' en equipos que no tengan la app moderna): System > Power > Plugged in = 'Maximum Performance' (o 3D > Application Optimal Mode = Performance en el panel clasico)." -Level INFO
