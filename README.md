@@ -23,8 +23,23 @@ red, y preferencia de GPU dedicada para el ejecutable del juego.
   imprime una checklist de ajustes recomendados para aplicar tu mismo desde
   el cliente.
 - No cambia el DNS del sistema (afectaria a todo el equipo, no solo al
-  juego) ni automatiza el NVIDIA Control Panel (requiere su API privada o
-  una herramienta de terceros que no forma parte de este proyecto).
+  juego) ni automatiza el panel de control propio de cada fabricante de GPU
+  (NVIDIA Control Panel / AMD Software / Intel Graphics Command Center):
+  ninguno expone una API de registro publica y estable para eso. En su
+  lugar, el optimizador detecta que fabricante(s) de GPU tienes
+  (`Win32_VideoController`) e imprime la recomendacion manual correcta para
+  cada uno.
+
+**Sobre GPU dedicada vs integrada:** el ajuste que SI se aplica
+automaticamente (forzar la GPU de alto rendimiento para League) usa la
+preferencia de Windows (`UserGpuPreferences`), que es agnostica de
+fabricante — funciona igual con NVIDIA, AMD o Intel, y es especialmente
+util en laptops con GPU integrada + dedicada (ej. Intel UHD + NVIDIA) para
+asegurar que el juego corra en la dedicada. En equipos con solo GPU
+integrada Intel UHD (sin dedicada), este ajuste es inofensivo pero no suma
+nada extra; ahi el mayor beneficio viene de los ajustes de energia/MMCSS,
+ya que el rendimiento de una iGPU depende directamente del presupuesto
+termico/energetico de la CPU.
 
 ## Requisitos
 
@@ -156,7 +171,7 @@ modules/
   Common.psm1             Logging + sistema de respaldo/restauracion generico
   SystemTweaks.psm1        Energia, MMCSS, Game DVR, servicios, prioridad de proceso
   NetworkTweaks.psm1       Nagle, QoS
-  GpuTweaks.psm1            Preferencia de GPU dedicada
+  GpuTweaks.psm1            Preferencia de GPU dedicada + deteccion de fabricante (NVIDIA/AMD/Intel)
   LolConfig.psm1            Deteccion de instalacion + checklist de graficos
 benchmark/
   Get-PresentMon.ps1        Descarga PresentMon (release oficial)
